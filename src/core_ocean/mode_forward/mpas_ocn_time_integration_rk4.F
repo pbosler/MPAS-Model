@@ -31,7 +31,6 @@ module ocn_time_integration_rk4
    use ocn_constants
    use ocn_tendency
    use ocn_diagnostics
-   use ocn_diagnostics_variables
    use ocn_gm
 
    use ocn_equation_of_state
@@ -40,6 +39,8 @@ module ocn_time_integration_rk4
    use ocn_wetting_drying
 
    use ocn_effective_density_in_land_ice
+   
+   use ocn_advection
 
    implicit none
    private
@@ -99,6 +100,7 @@ module ocn_time_integration_rk4
       type (mpas_pool_type), pointer :: meshPool
       type (mpas_pool_type), pointer :: provisStatePool
       type (mpas_pool_type), pointer :: provisTracersPool
+      type (mpas_pool_type), pointer :: diagnosticsPool
       type (mpas_pool_type), pointer :: verticalMeshPool
       type (mpas_pool_type), pointer :: forcingPool
       type (mpas_pool_type), pointer :: scratchPool
@@ -133,7 +135,7 @@ module ocn_time_integration_rk4
       logical, pointer :: config_prevent_drying
       logical, pointer :: config_zero_drying_velocity
       character (len=StrKIND), pointer :: config_land_ice_flux_mode
-
+      
       ! State indices
       integer, pointer :: indexTemperature
       integer, pointer :: indexSalinity
@@ -154,6 +156,8 @@ module ocn_time_integration_rk4
       real (kind=RKIND), dimension(:,:), pointer :: highFreqThicknessTend, lowFreqDivergenceTend, normalVelocityTend, &
                                                     layerThicknessTend
       real (kind=RKIND), dimension(:,:,:), pointer :: tracersGroupTend
+
+      ! Diagnostics Array Pointers
 
       ! State Array Pointers
       real (kind=RKIND), dimension(:,:), pointer :: normalVelocityCur, normalVelocityNew
@@ -183,6 +187,9 @@ module ocn_time_integration_rk4
       real (kind=RKIND), dimension(:), pointer :: tidalInputMask, tidalBCValue
       real (kind=RKIND), dimension(:,:), pointer :: restingThickness
       real (kind=RKIND) :: totalDepth
+      
+      ! current time (needed for advection velocity)
+      real (kind=RKIND), pointer :: daysSinceStartOfSim
 
       ! Get config options
       call mpas_pool_get_config(domain % configs, 'config_mom_del4', config_mom_del4)
@@ -369,11 +376,18 @@ module ocn_time_integration_rk4
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! BEGIN RK loop
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      call mpas_pool_get_array(diagnosticsPool, 'daysSinceStartOfSim', daysSinceStartOfSim)
       do rk_step = 1, 4
 
         if (config_disable_thick_all_tend .and. config_disable_vel_all_tend .and. config_disable_tr_all_tend) then
           exit ! don't compute in loop meant to update velocity, thickness, and tracers
         end if
+
+        ! If this is an advection test,
+        ! write advection velocity from prescribed flow field
+        ! This is a no-op for non-advection test runs
+        call ocn_adv_velocity(meshPool, daysSinceStartOfSim, rk_substep_weights(rk_step),&
+           normalVelocityNew)
 
         ! Update halos for diagnostic variables.
         if (config_use_cvmix_kpp) then
