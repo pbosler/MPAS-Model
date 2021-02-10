@@ -66,7 +66,8 @@ OBJS = mpas_ocn_init_routines.o \
 	   mpas_ocn_framework_forcing.o \
 	   mpas_ocn_time_varying_forcing.o \
 	   mpas_ocn_wetting_drying.o \
-	   mpas_ocn_vel_tidal_potential.o
+	   mpas_ocn_vel_tidal_potential.o \
+	   mpas_ocn_advection.o
 
 all: $(OBJS)
 
@@ -79,6 +80,8 @@ mpas_ocn_diagnostics.o: mpas_ocn_thick_ale.o mpas_ocn_equation_of_state.o mpas_o
 mpas_ocn_diagnostics_variables.o: mpas_ocn_config.o
 
 mpas_ocn_mesh.o: 
+
+mpas_ocn_advection.o:
 
 mpas_ocn_thick_ale.o: mpas_ocn_constants.o mpas_ocn_config.o
 
