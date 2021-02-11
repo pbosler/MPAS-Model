@@ -42,6 +42,8 @@ module ocn_time_integration_split
    use ocn_time_average_coupled
 
    use ocn_effective_density_in_land_ice
+   
+   use ocn_advection
 
    implicit none
    private
@@ -100,6 +102,7 @@ module ocn_time_integration_split
       type (mpas_pool_type), pointer :: tracersPool
       type (mpas_pool_type), pointer :: meshPool
       type (mpas_pool_type), pointer :: verticalMeshPool
+      type (mpas_pool_type), pointer :: diagnosticsPool
       type (mpas_pool_type), pointer :: tendPool
       type (mpas_pool_type), pointer :: tracersTendPool
       type (mpas_pool_type), pointer :: forcingPool
@@ -206,6 +209,8 @@ module ocn_time_integration_split
       character (len=StrKIND) :: modifiedGroupName
       character (len=StrKIND) :: configName
       integer :: threadNum
+      
+      real(kind=RKIND), pointer :: daysSinceStartOfSim
 
       integer :: temp_mask
       real (kind=RKIND) :: tracer2_value, lat
@@ -269,6 +274,7 @@ module ocn_time_integration_split
          call mpas_pool_get_subpool(block % structs, 'state', statePool)
          call mpas_pool_get_subpool(statePool, 'tracers', tracersPool)
          call mpas_pool_get_subpool(block % structs, 'mesh', meshPool)
+         call mpas_pool_get_subpool(block%structs, 'diagnostics', diagnosticsPool)
 
          call mpas_pool_get_array(statePool, 'normalBaroclinicVelocity', normalBaroclinicVelocityCur, 1)
          call mpas_pool_get_array(statePool, 'normalBarotropicVelocity', normalBarotropicVelocityCur, 1)
@@ -297,6 +303,8 @@ module ocn_time_integration_split
          nEdges = nEdgesPtr
 
          ! Initialize * variables that are used to compute baroclinic tendencies below.
+         call mpas_pool_get_array(diagnosticsPool, 'daysSinceStartOfSim', daysSinceStartOfSim)
+         call ocn_adv_velocity(meshPool, daysSinceStartOfSim, 0.5*dt, normalVelocityCur)
 
          !$omp parallel
          !$omp do schedule(runtime) private(k)
