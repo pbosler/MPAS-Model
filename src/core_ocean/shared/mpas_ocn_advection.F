@@ -270,7 +270,7 @@ subroutine ocn_adv_velocity(meshPool, days_since_start, dt, normalVelocity)
     integer, pointer :: nEdges
     integer :: i
 
-    call act_init()
+    call flow_init()
     if (ft%state /= 2) return
 
     time_sec = days_since_start*one_day + dt
