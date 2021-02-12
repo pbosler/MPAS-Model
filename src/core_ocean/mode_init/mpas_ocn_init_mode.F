@@ -405,6 +405,7 @@ module ocn_init_mode
       iErr = ior(iErr, err_tmp)
       call ocn_init_validate_cosine_bell(configPool, packagePool, iocontext, iErr=err_tmp)
       iErr = ior(iErr, err_tmp)
+      call ocn_init_validate_advection(configPool, packagePool, iocontext, iErr=err_tmp)
       ! call ocn_init_validate_TEMPLATE(configPool, packagePool, iocontext, iErr=err_tmp)
       ! iErr = ior(iErr, err_tmp)
    end subroutine ocn_init_mode_validate_configuration!}}}
