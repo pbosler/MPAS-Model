@@ -31,7 +31,7 @@ module ocn_init_advection
   implicit none
 
   contains
-  
+
 !***********************************************************************
 !
 !  routine ocn_init_setup_advection
@@ -44,7 +44,7 @@ module ocn_init_advection
 !>  tests.
 !
 !-----------------------------------------------------------------------
-  subroutine ocn_init_setup_act(domain, iErr)
+  subroutine ocn_init_setup_advection(domain, iErr)
     type (domain_type), intent(inout) :: domain
     integer, intent(out) :: iErr
 
@@ -69,8 +69,8 @@ module ocn_init_advection
 !>  This routine validates the configuration options for the time-reversible
 !>  advection test cases.
 !
-!-----------------------------------------------------------------------  
-  subroutine ocn_init_validate_act(configPool, packagePool, iocontext, iErr)
+!-----------------------------------------------------------------------
+  subroutine ocn_init_validate_advection(configPool, packagePool, iocontext, iErr)
     type (mpas_pool_type), intent(inout) :: configPool
     type (mpas_pool_type), intent(inout) :: packagePool
     type (mpas_io_context_type), intent(inout) :: iocontext
