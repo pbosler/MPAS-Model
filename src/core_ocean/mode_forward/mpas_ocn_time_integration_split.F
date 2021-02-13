@@ -306,7 +306,7 @@ module ocn_time_integration_split
          call mpas_pool_get_array(diagnosticsPool, 'daysSinceStartOfSim', daysSinceStartOfSim)
          ! If this is an transport test, write advection velocity from prescribed flow field
         ! Otherwise, this does nothing.
-         call ocn_adv_velociocn_transport_test_velocityty(meshPool, daysSinceStartOfSim, &
+         call ocn_transport_test_velocity(meshPool, daysSinceStartOfSim, &
           0.5*dt, normalVelocityCur)
 
          !$omp parallel
