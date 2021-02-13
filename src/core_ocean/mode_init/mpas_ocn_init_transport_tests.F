@@ -55,7 +55,7 @@ module ocn_init_transport_tests
          config_init_configuration)
     if (config_init_configuration /= trim('transport_tests')) return
 
-    call ocn_adv_init_setup(domain, iErr)
+    call ocn_transport_test_init_setup(domain, iErr)
   end subroutine ocn_init_setup_transport_tests
 
 !***********************************************************************
@@ -83,7 +83,7 @@ module ocn_init_transport_tests
          config_init_configuration)
     if (config_init_configuration /= trim('transport_tests')) return
 
-    call ocn_adv_init_validate(configPool, packagePool, iocontext, iErr)
+    call ocn_transport_test_init_validate(configPool, packagePool, iocontext, iErr)
   end subroutine ocn_init_validate_transport_tests
 
 end module ocn_init_transport_tests
