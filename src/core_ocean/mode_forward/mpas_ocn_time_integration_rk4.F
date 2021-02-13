@@ -39,7 +39,7 @@ module ocn_time_integration_rk4
    use ocn_wetting_drying
 
    use ocn_effective_density_in_land_ice
-   
+
    use ocn_advection
 
    implicit none
@@ -135,7 +135,7 @@ module ocn_time_integration_rk4
       logical, pointer :: config_prevent_drying
       logical, pointer :: config_zero_drying_velocity
       character (len=StrKIND), pointer :: config_land_ice_flux_mode
-      
+
       ! State indices
       integer, pointer :: indexTemperature
       integer, pointer :: indexSalinity
@@ -187,7 +187,7 @@ module ocn_time_integration_rk4
       real (kind=RKIND), dimension(:), pointer :: tidalInputMask, tidalBCValue
       real (kind=RKIND), dimension(:,:), pointer :: restingThickness
       real (kind=RKIND) :: totalDepth
-      
+
       ! current time (needed for advection velocity)
       real (kind=RKIND), pointer :: daysSinceStartOfSim
 
@@ -296,7 +296,7 @@ module ocn_time_integration_rk4
 
          if (associated(lowFreqDivergenceCur)) then
               !$omp parallel
-              !$omp do schedule(runtime) 
+              !$omp do schedule(runtime)
               do iCell = 1, nCells
                  lowFreqDivergenceNew(:, iCell) = lowFreqDivergenceCur(:, iCell)
               end do
@@ -376,7 +376,9 @@ module ocn_time_integration_rk4
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! BEGIN RK loop
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      print* "rk4 get daysSinceStartOfSim"
       call mpas_pool_get_array(diagnosticsPool, 'daysSinceStartOfSim', daysSinceStartOfSim)
+      print* "rk4 return from get daysSinceStartOfSim"
       do rk_step = 1, 4
 
         if (config_disable_thick_all_tend .and. config_disable_vel_all_tend .and. config_disable_tr_all_tend) then
@@ -452,7 +454,7 @@ module ocn_time_integration_rk4
               call mpas_pool_get_dimension(block % dimensions, 'nCells', nCells)
 
               !$omp parallel
-              !$omp do schedule(runtime) 
+              !$omp do schedule(runtime)
               do iCell = 1, nCells
                  highFreqThicknessProvis(:, iCell) = highFreqThicknessCur(:, iCell) + rk_substep_weights(rk_step) &
                     * highFreqThicknessTend(:, iCell)
@@ -647,7 +649,7 @@ module ocn_time_integration_rk4
 
          if (config_prescribe_velocity) then
             !$omp parallel
-            !$omp do schedule(runtime) 
+            !$omp do schedule(runtime)
             do iEdge = 1, nEdges
                normalVelocityNew(:, iEdge) = normalVelocityCur(:, iEdge)
             end do
@@ -657,7 +659,7 @@ module ocn_time_integration_rk4
 
          if (config_prescribe_thickness) then
             !$omp parallel
-            !$omp do schedule(runtime) 
+            !$omp do schedule(runtime)
             do iCell = 1, nCells
                layerThicknessNew(:, iCell) = layerThicknessCur(:, iCell)
             end do
@@ -694,7 +696,7 @@ module ocn_time_integration_rk4
          ! Accumulating various parameterizations of the transport velocity
          ! ------------------------------------------------------------------
          !$omp parallel
-         !$omp do schedule(runtime) 
+         !$omp do schedule(runtime)
          do iEdge = 1, nEdges
             normalTransportVelocity(:, iEdge) = normalVelocityNew(:, iEdge)
          end do
@@ -709,7 +711,7 @@ module ocn_time_integration_rk4
 
          if (config_use_GM) then
             !$omp parallel
-            !$omp do schedule(runtime) 
+            !$omp do schedule(runtime)
             do iEdge = 1, nEdges
                normalTransportVelocity(:, iEdge) = normalTransportVelocity(:, iEdge) + normalGMBolusVelocity(:, iEdge)
             end do
@@ -731,7 +733,7 @@ module ocn_time_integration_rk4
                           includeHalos = .true.)
 
          !$omp parallel
-         !$omp do schedule(runtime) 
+         !$omp do schedule(runtime)
          do iCell = 1, nCells
             surfaceVelocity(indexSurfaceVelocityZonal, iCell) = velocityZonal(1, iCell)
             surfaceVelocity(indexSurfaceVelocityMeridional, iCell) = velocityMeridional(1, iCell)
@@ -1141,7 +1143,7 @@ module ocn_time_integration_rk4
 
       if (associated(lowFreqDivergenceCur)) then
          !$omp parallel
-         !$omp do schedule(runtime) 
+         !$omp do schedule(runtime)
          do iCell = 1, nCells
             lowFreqDivergenceProvis(:, iCell) = lowFreqDivergenceCur(:, iCell) + rkSubstepWeight &
                                               * lowFreqDivergenceTend(:, iCell)
@@ -1152,7 +1154,7 @@ module ocn_time_integration_rk4
 
       if (config_prescribe_velocity) then
          !$omp parallel
-         !$omp do schedule(runtime) 
+         !$omp do schedule(runtime)
          do iEdge = 1, nEdges
             normalVelocityProvis(:, iEdge) = normalVelocityCur(:, iEdge)
          end do
@@ -1162,7 +1164,7 @@ module ocn_time_integration_rk4
 
       if (config_prescribe_thickness) then
          !$omp parallel
-         !$omp do schedule(runtime) 
+         !$omp do schedule(runtime)
          do iCell = 1, nCells
             layerThicknessProvis(:, iCell) = layerThicknessCur(:, iCell)
          end do
@@ -1176,7 +1178,7 @@ module ocn_time_integration_rk4
       ! Accumulating various parametrizations of the transport velocity
       ! ------------------------------------------------------------------
       !$omp parallel
-      !$omp do schedule(runtime) 
+      !$omp do schedule(runtime)
       do iEdge = 1, nEdges
          normalTransportVelocity(:, iEdge) = normalVelocityProvis(:, iEdge)
       end do
@@ -1191,7 +1193,7 @@ module ocn_time_integration_rk4
 
       if (config_use_GM) then
          !$omp parallel
-         !$omp do schedule(runtime) 
+         !$omp do schedule(runtime)
          do iEdge = 1, nEdges
             normalTransportVelocity(:, iEdge) = normalTransportVelocity(:, iEdge) + normalGMBolusVelocity(:,iEdge)
          end do
@@ -1268,7 +1270,7 @@ module ocn_time_integration_rk4
       end do
       !$omp end do
 
-      !$omp do schedule(runtime) 
+      !$omp do schedule(runtime)
       do iEdge = 1, nEdges
          normalVelocityNew(:, iEdge) = normalVelocityNew(:, iEdge) + rkWeight * normalVelocityTend(:, iEdge)
          normalVelocityNew(:, iEdge) = normalVelocityNew(:, iEdge) * (1.0_RKIND - wettingVelocity(:, iEdge))
@@ -1305,7 +1307,7 @@ module ocn_time_integration_rk4
 
       if (associated(highFreqThicknessNew)) then
          !$omp parallel
-         !$omp do schedule(runtime) 
+         !$omp do schedule(runtime)
          do iCell = 1, nCells
             highFreqThicknessNew(:, iCell) = highFreqThicknessNew(:, iCell) + rkWeight * highFreqThicknessTend(:, iCell)
          end do
@@ -1315,7 +1317,7 @@ module ocn_time_integration_rk4
 
       if (associated(lowFreqDivergenceNew)) then
          !$omp parallel
-         !$omp do schedule(runtime) 
+         !$omp do schedule(runtime)
          do iCell = 1, nCells
             lowFreqDivergenceNew(:, iCell) = lowFreqDivergenceNew(:, iCell) + rkWeight * lowFreqDivergenceTend(:, iCell)
          end do
