@@ -28,7 +28,7 @@ TEST_CASES = mpas_ocn_init_baroclinic_channel.o \
              mpas_ocn_init_hurricane.o \
              mpas_ocn_init_tidal_boundary.o \
              mpas_ocn_init_cosine_bell.o \
-             mpas_ocn_init_advection.o
+             mpas_ocn_init_transport_tests.o
              #mpas_ocn_init_TEMPLATE.o
 
 all: init_mode
@@ -36,6 +36,8 @@ all: init_mode
 init_mode: $(UTILS) $(TEST_CASES) $(OBJS)
 
 mpas_ocn_init_mode.o: $(UTILS) $(TEST_CASES)
+
+mpas_ocn_init_transport_tests.o:
 
 mpas_ocn_init_cell_markers.o:
 

@@ -40,7 +40,7 @@ module ocn_time_integration_rk4
 
    use ocn_effective_density_in_land_ice
 
-   use ocn_advection
+   use ocn_transport_tests
 
    implicit none
    private
@@ -385,10 +385,9 @@ module ocn_time_integration_rk4
           exit ! don't compute in loop meant to update velocity, thickness, and tracers
         end if
 
-        ! If this is an advection test,
-        ! write advection velocity from prescribed flow field
-        ! This is a no-op for non-advection test runs
-        call ocn_adv_velocity(meshPool, daysSinceStartOfSim, rk_substep_weights(rk_step),&
+        ! If this is an transport test, write advection velocity from prescribed flow field
+        ! Otherwise, this does nothing.
+        call ocn_transport_test_velocity(meshPool, daysSinceStartOfSim, rk_substep_weights(rk_step),&
            normalVelocityNew)
 
         ! Update halos for diagnostic variables.

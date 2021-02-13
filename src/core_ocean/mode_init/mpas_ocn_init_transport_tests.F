@@ -17,7 +17,7 @@
 !>  the 2D and 3D spherical advection test cases from DCMIP.
 !
 !-----------------------------------------------------------------------
-module ocn_init_advection
+module ocn_init_transport_tests
   use mpas_kind_types
   use mpas_io_units
   use mpas_derived_types
@@ -26,7 +26,7 @@ module ocn_init_advection
   use mpas_stream_manager
   use mpas_dmpar
 
-  use ocn_advection
+  use ocn_transport_tests
 
   implicit none
 
@@ -34,7 +34,7 @@ module ocn_init_advection
 
 !***********************************************************************
 !
-!  routine ocn_init_setup_advection
+!  routine ocn_init_setup_transport_tests
 !
 !> \brief   Setup for advection test cases
 !> \author  Andrew Bradley
@@ -44,7 +44,7 @@ module ocn_init_advection
 !>  tests.
 !
 !-----------------------------------------------------------------------
-  subroutine ocn_init_setup_advection(domain, iErr)
+  subroutine ocn_init_setup_transport_tests(domain, iErr)
     type (domain_type), intent(inout) :: domain
     integer, intent(out) :: iErr
 
@@ -53,14 +53,14 @@ module ocn_init_advection
     iErr = 0
     call mpas_pool_get_config(domain%configs,'config_init_configuration', &
          config_init_configuration)
-    if (config_init_configuration /= trim('advection')) return
+    if (config_init_configuration /= trim('transport_tests')) return
 
     call ocn_adv_init_setup(domain, iErr)
-  end subroutine ocn_init_setup_act
+  end subroutine ocn_init_setup_transport_tests
 
 !***********************************************************************
 !
-!  routine ocn_init_validate_advection
+!  routine ocn_init_validate_transport_tests
 !
 !> \brief   Validation for advection test cases
 !> \author  Andrew Bradley
@@ -70,7 +70,7 @@ module ocn_init_advection
 !>  advection test cases.
 !
 !-----------------------------------------------------------------------
-  subroutine ocn_init_validate_advection(configPool, packagePool, iocontext, iErr)
+  subroutine ocn_init_validate_transport_tests(configPool, packagePool, iocontext, iErr)
     type (mpas_pool_type), intent(inout) :: configPool
     type (mpas_pool_type), intent(inout) :: packagePool
     type (mpas_io_context_type), intent(inout) :: iocontext
@@ -81,9 +81,9 @@ module ocn_init_advection
     iErr = 0
     call mpas_pool_get_config(configPool,'config_init_configuration', &
          config_init_configuration)
-    if (config_init_configuration /= trim('advection')) return
+    if (config_init_configuration /= trim('transport_tests')) return
 
     call ocn_adv_init_validate(configPool, packagePool, iocontext, iErr)
-  end subroutine ocn_init_validate_act
+  end subroutine ocn_init_validate_transport_tests
 
-end module ocn_init_advection
+end module ocn_init_transport_tests
