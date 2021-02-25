@@ -7,10 +7,10 @@
 !
 !|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 !
-!  ocn_init_advection
+!  ocn_init_transport_tests
 !
-!> \brief MPAS ocean initialize case -- tracer advection tests
-!> \author Andrew Bradley (Sandia National Laboratories)
+!> \brief MPAS ocean initialize case -- tracer transport tests
+!> \author Andrew Bradley and Peter Bosler (Sandia National Laboratories)
 !> \date   12/20/2020
 !> \details
 !>  This module contains the routines for initializing the
@@ -29,6 +29,9 @@ module ocn_init_transport_tests
   use ocn_transport_tests
 
   implicit none
+  private
+  public :: ocn_init_setup_transport_tests, &
+            ocn_init_validate_transport_tests
 
   contains
 
@@ -54,6 +57,8 @@ module ocn_init_transport_tests
     call mpas_pool_get_config(domain%configs,'config_init_configuration', &
          config_init_configuration)
     if (config_init_configuration /= trim('transport_tests')) return
+
+    call mpas_log_write("entered subroutine ocn_init_setup_transport_tests")
 
     call ocn_transport_test_init_setup(domain, iErr)
   end subroutine ocn_init_setup_transport_tests
@@ -81,7 +86,9 @@ module ocn_init_transport_tests
     iErr = 0
     call mpas_pool_get_config(configPool,'config_init_configuration', &
          config_init_configuration)
-    if (config_init_configuration /= trim('transport_tests')) return
+    if (trim(config_init_configuration) /= trim('transport_tests')) return
+
+    call mpas_log_write("entered subroutine ocn_init_setup_transport_tests")
 
     call ocn_transport_test_init_validate(configPool, packagePool, iocontext, iErr)
   end subroutine ocn_init_validate_transport_tests

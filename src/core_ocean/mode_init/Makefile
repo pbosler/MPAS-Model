@@ -37,7 +37,7 @@ init_mode: $(UTILS) $(TEST_CASES) $(OBJS)
 
 mpas_ocn_init_mode.o: $(UTILS) $(TEST_CASES)
 
-mpas_ocn_init_transport_tests.o:
+mpas_ocn_init_transport_tests.o: $(UTILS)
 
 mpas_ocn_init_cell_markers.o:
 
