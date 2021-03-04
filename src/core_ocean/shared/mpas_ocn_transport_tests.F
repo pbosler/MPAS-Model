@@ -309,15 +309,15 @@ subroutine ocn_transport_test_velocity(meshPool, days_since_start, dt, normalVel
     if (ft%state /= 0) return
     ft%state = 1
 
-    call get_environment_variable("adv_vel", key, status=err)
+    call get_environment_variable("transport_tests", key, status=err)
     if (err == 0) then
       read(key, '(i)') val
       if (val /= 0) ft%state = 2
     endif
 
-    if (ft%state /= 2) return  !! Should this be an error condition?
-
-    ft%flow = 1
+    !if (ft%state /= 2) return  !! Should this be an error condition?
+    val = 1
+    ft%state = 2
     if (val >=1 .and. val <=3) ft%flow = val
   end subroutine flow_init
 
