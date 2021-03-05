@@ -50,9 +50,14 @@ module ocn_transport_tests
                                  one_day = 86400.0_RKIND, &
                                  twelve_days = 12.0_RKIND*one_day
 
+  character(len=32), parameter :: tc1str = "rotation"
+  character(len=32), parameter :: tc2str = "nondivergent2D"
+  character(len=32), parameter :: tc3str = "divergent2D"
+  character(len=32), parameter :: tc4str = "correlatedTracers2D"
+
   type :: flow_type
     integer :: state = 0
-    integer :: flow
+    integer :: flow = 0
   end type flow_type
 
   type(flow_type), save :: ft
@@ -96,7 +101,8 @@ module ocn_transport_tests
                         nVerticesSolve, &
                         index_temperature, &
                         index_salinity,&
-                        index_tracer1
+                        index_tracer1, &
+                        config_flow_id
     integer, dimension(:), pointer :: maxLevelCell
     real (kind=RKIND), pointer :: sphere_radius
     real (kind=RKIND), dimension(:), pointer :: refBottomDepth,&
@@ -125,13 +131,34 @@ module ocn_transport_tests
                k, &
                kML
 
-    real (kind=RKIND) :: temp,&
-                         velocity, &
-                         temperature, &
-                         salinity, &
-                         vs
+    real (kind=RKIND) :: vs
+    real (kind=RKIND), pointer :: temperature, salinity
 
     err = 0
+
+    call mpas_log_write("entered subroutine ocn_transport_test_init_setup", MPAS_LOG_OUT, .true.)
+
+    ! cannot call this routine unless 'config_init_configuration' = 'transport_tests'
+    call mpas_pool_get_config(domain%configs, 'config_init_configuration', config_init_configuration)
+    if (trim(config_init_configuration) /= trim('transport_tests')) then
+      err = 1
+      call mpas_log_write('invalid transport_tests config: '//config_init_configuration, MPAS_LOG_ERR)
+    else
+      ft%state = 2
+      ! set ft to positively id a transport test
+      call mpas_pool_get_config(domain%configs, 'config_transport_tests_flow_id', config_flow_id)
+      call mpas_log_write('after reading config_flow_id = ', MPAS_LOG_OUT, intArgs=[config_flow_id])
+      if (config_flow_id < 1 .or. config_flow_id > 4) then
+        err = 1
+        call mpas_log_write('invalid transport_tests flow id', MPAS_LOG_ERR, intArgs=[config_flow_id])
+      endif
+      ft%flow = config_flow_id
+      call mpas_log_write("transport_tests: setting up test case "//trim(flow_id_name(config_flow_id)), &
+        MPAS_LOG_OUT, .true.)
+    endif
+
+    call mpas_pool_get_config(domain%configs, 'config_transport_tests_salinity', salinity)
+    call mpas_pool_get_config(domain%configs, 'config_transport_tests_temperature', temperature)
 
     block_ptr => domain % blocklist
     do while(associated(block_ptr))
@@ -184,17 +211,26 @@ module ocn_transport_tests
 
        do iCell = 1, nCellsSolve
           if (associated(activeTracers) ) then
-             activeTracers(index_temperature, :, iCell) = 15.0d0
-             activeTracers(index_salinity, :, iCell) = 35.0d0
+             activeTracers(index_temperature, :, iCell) = temperature !15.0d0
+             activeTracers(index_salinity, :, iCell) = salinity !35.0d0
           endif
 
           if (associated(debugTracers)) then
-             do k = 1, nVertLevels
-                vs = 1
-                debugTracers(1, k, iCell) = vs*xyztrig(lonCell(iCell), latCell(iCell))
-                debugTracers(2, k, iCell) = vs*cosine_bells(lonCell(iCell), latCell(iCell))
-                debugTracers(3, k, iCell) = vs*slotted_cylinders(lonCell(iCell), latCell(iCell))
-             end do
+            if (ft%flow /= 4) then
+              vs = 1
+              do k = 1, nVertLevels
+                 debugTracers(1, k, iCell) = vs*xyztrig(lonCell(iCell), latCell(iCell))
+                 debugTracers(2, k, iCell) = vs*cosine_bells(lonCell(iCell), latCell(iCell))
+                 debugTracers(3, k, iCell) = vs*slotted_cylinders(lonCell(iCell), latCell(iCell))
+              end do
+             else
+              ! Correlated Tracers test case
+              do k=1, nVertLevels
+                 debugTracers(1, k, iCell) = vs*xyztrig(lonCell(iCell), latCell(iCell))
+                 debugTracers(2, k, iCell) = vs*cosine_bells(lonCell(iCell), latCell(iCell))
+                 debugTracers(3, k, iCell) = correlation_fn(debugTracers(2, k, iCell))
+              enddo
+             endif
           endif
 
           do k = 1, nVertLevels
@@ -270,7 +306,7 @@ subroutine ocn_transport_test_velocity(meshPool, days_since_start, dt, normalVel
     integer, pointer :: nEdges
     integer :: i
 
-    call flow_init()
+    !   call flow_init() // uncomment for debug/testing with flow_init()
     if (ft%state /= 2) return
 
     time_sec = days_since_start*one_day + dt
@@ -301,7 +337,7 @@ subroutine ocn_transport_test_velocity(meshPool, days_since_start, dt, normalVel
 !
 !--------------------------------------------------------------------
 
-  ! TODO: Figure out how compass prefers to do this
+  ! For debug/testing: ignore config variables and manually set up test case
   subroutine flow_init()
     character (len=255) :: key
     integer :: err, val
@@ -315,11 +351,22 @@ subroutine ocn_transport_test_velocity(meshPool, days_since_start, dt, normalVel
       if (val /= 0) ft%state = 2
     endif
 
-    !if (ft%state /= 2) return  !! Should this be an error condition?
+    !if (ft%state /= 2) return
     val = 1
     ft%state = 2
     if (val >=1 .and. val <=3) ft%flow = val
   end subroutine flow_init
+
+  pure function flow_id_name(fid) result(tcname)
+    integer, intent(in) :: fid
+    character(len=32) :: tcname
+    select case (fid)
+      case (1) ; tcname = tc1str
+      case (2) ; tcname = tc2str
+      case (3) ; tcname = tc3str
+      case (4) ; tcname = tc4str
+    end select
+  end function
 
 !***********************************************************************
 !
@@ -432,6 +479,7 @@ subroutine ocn_transport_test_velocity(meshPool, days_since_start, dt, normalVel
 ! Tracer initial conditions
 !
 
+  ! Lauritzen et al. 2012 does not have a global C-infty tracer; we add this one.
   pure function xyztrig(lon, lat) result (f)
     real(RKIND), intent(in) :: lon, lat
     real(RKIND) :: f, x, y, z
@@ -439,6 +487,7 @@ subroutine ocn_transport_test_velocity(meshPool, days_since_start, dt, normalVel
     f = 0.5_RKIND*(1 + sin(pi*x)*sin(pi*y)*sin(pi*z))
   end function xyztrig
 
+  ! Lauritzen et al. 2012 eqn. (11)
   pure function cosine_bells(lon, lat) result (cbs)
     real(RKIND), intent(in) :: lon, lat
     real(RKIND), parameter :: r = 0.5_RKIND, b = 0.1_RKIND, c = 0.9_RKIND, &
@@ -457,6 +506,7 @@ subroutine ocn_transport_test_velocity(meshPool, days_since_start, dt, normalVel
     end if
   end function cosine_bells
 
+  ! Lauritzen et al. 2012 eqn. (10)
   pure function cosine_bell(ri, r) result(cb)
     real(RKIND), intent(in) :: ri, r
     real(RKIND) :: cb
@@ -464,6 +514,15 @@ subroutine ocn_transport_test_velocity(meshPool, days_since_start, dt, normalVel
     cb = 0.5_RKIND*hmax*(1 + cos(pi*ri/r))
   end function cosine_bell
 
+  ! Lauritzen et al. 2012 eqns. (14) and (15)
+  pure function correlation_fn(q1) result(q2)
+    real(RKIND), intent(in) :: q1
+    real(RKIND) :: q2
+    real(RKIND), parameter :: apsi = -0.8_RKIND, bpsi = 0.9_RKIND
+    q2 = apsi * q1 * q1 + bpsi
+  end function correlation_fn
+
+  ! Lauritzen et al. 2012 eqn. (12)
   pure function slotted_cylinders(lon, lat) result (scs)
     real(RKIND), intent(in) :: lon, lat
     real(RKIND), parameter :: b = 0.1_RKIND, c = 1._RKIND, R = 1._RKIND, Rh = R/2, &

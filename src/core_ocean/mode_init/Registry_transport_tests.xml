@@ -11,4 +11,8 @@
     description="Salinity of the ocean."
     possible_values="Any real number"
   />
+  <nml_option name="config_transport_tests_flow_id" type="integer" default_value="0" units="unitless"
+   description="integer id of transport test."
+   possible_values="1 = rotation, 2 = nondivergent2D, 3 = divergent2D, 4 = correlatedTracers2D"
+  />
 </nml_record>
