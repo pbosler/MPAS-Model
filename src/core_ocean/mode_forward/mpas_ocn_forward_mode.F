@@ -449,14 +449,14 @@ module ocn_forward_mode
          if (trim(config_stop_time) /= "none") then
             call mpas_set_time(curr_time=stopTime, dateTimeString=config_stop_time, ierr=err_tmp)
             if(startTime + runduration /= stopTime) then
-               call mpas_log_write('Warning: config_run_duration and config_stop_time are inconsitent: using config_run_duration.')
+               call mpas_log_write('Warning: config_run_duration and config_stop_time are inconsitent: using config_run_duration.', MPAS_LOG_WARN)
             end if
          end if
       else if (trim(config_stop_time) /= "none") then
          call mpas_set_time(curr_time=stopTime, dateTimeString=config_stop_time, ierr=err_tmp)
          call mpas_create_clock(core_clock, startTime=startTime, timeStep=timeStep, stopTime=stopTime, ierr=err_tmp)
       else
-          call mpas_log_write('Error: Neither config_run_duration nor config_stop_time were specified.')
+          call mpas_log_write('Error: Neither config_run_duration nor config_stop_time were specified.', MPAS_LOG_ERR)
           ierr = 1
       end if
 
