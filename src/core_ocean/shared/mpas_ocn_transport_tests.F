@@ -36,6 +36,7 @@ module ocn_transport_tests
   use mpas_dmpar
 
   use ocn_config, only : config_init_configuration, &
+                         config_ocean_run_mode, &
                          config_transport_tests_flow_id, &
                          config_transport_tests_salinity, &
                          config_transport_tests_temperature, &
