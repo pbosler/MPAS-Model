@@ -115,7 +115,9 @@ contains
 
     iErr = 0
 
-    call mpas_log_write('here')
+#ifdef MPAS_DEBUG
+    call mpas_log_write('entered subroutine ocn_init_setup_tidal_boundary')
+#endif
     if(config_init_configuration .ne. trim('tidal_boundary')) return
 
     call mpas_pool_get_subpool(domain % blocklist % structs, 'mesh', meshPool)
@@ -399,7 +401,7 @@ contains
         end if
       end do
 
-      ! check that there is some tidalInputMask 
+      ! check that there is some tidalInputMask
       if (.not. sum(tidalInputMask) > 0) then
         call mpas_log_write('Input mask for tidal case is not set!', MPAS_LOG_CRIT)
       end if
