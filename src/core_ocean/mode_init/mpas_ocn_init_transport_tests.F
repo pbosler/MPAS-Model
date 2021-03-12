@@ -26,6 +26,7 @@ module ocn_init_transport_tests
   use mpas_stream_manager
   use mpas_dmpar
 
+  use ocn_config
   use ocn_transport_tests
 
   implicit none
@@ -54,13 +55,14 @@ module ocn_init_transport_tests
     character (len=StrKIND), pointer :: config_init_configuration
 
     iErr = 0
-    call mpas_pool_get_config(domain%configs,'config_init_configuration', &
-         config_init_configuration)
-    if (config_init_configuration /= trim('transport_tests')) return
-
+#ifdef MPAS_DEBUG
     call mpas_log_write("entered subroutine ocn_init_setup_transport_tests")
-
+#endif
+    if (config_init_configuration /= trim('transport_tests')) return
     call ocn_transport_test_init_setup(domain, iErr)
+#ifdef MPAS_DEBUG
+    call mpas_log_write("exiting subroutine ocn_init_setup_transport_tests")
+#endif
   end subroutine ocn_init_setup_transport_tests
 
 !***********************************************************************
@@ -84,11 +86,10 @@ module ocn_init_transport_tests
     character (len=StrKIND), pointer :: config_init_configuration
 
     iErr = 0
-    call mpas_pool_get_config(configPool,'config_init_configuration', &
-         config_init_configuration)
     if (trim(config_init_configuration) /= trim('transport_tests')) return
-
+#ifdef MPAS_DEBUG
     call mpas_log_write("entered subroutine ocn_init_setup_transport_tests")
+#endif
 
     call ocn_transport_test_init_validate(configPool, packagePool, iocontext, iErr)
   end subroutine ocn_init_validate_transport_tests

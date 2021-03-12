@@ -17,6 +17,8 @@
 !>
 !> and the 3D transport tests defined in
 !>
+!> ** This file is in 'shared' because it is used by both forward mode and init mode **
+!>
 !> J. Kent, P. A. Ullrich, and C. Jablonowski, 2014, "Dynamical core model
 !> intercomparison project: Tracer transport test cases," Q. J. Roy. Met. Soc.
 !> 140:681, 1279--1293.
@@ -32,6 +34,12 @@ module ocn_transport_tests
   use mpas_constants
   use mpas_stream_manager
   use mpas_dmpar
+
+  use ocn_config, only : config_init_configuration, &
+                         config_transport_tests_flow_id, &
+                         config_transport_tests_salinity, &
+                         config_transport_tests_temperature, &
+                         config_transport_tests_vert_levels
 
   implicit none
   private
@@ -101,8 +109,7 @@ module ocn_transport_tests
                         nVerticesSolve, &
                         index_temperature, &
                         index_salinity,&
-                        index_tracer1, &
-                        config_flow_id
+                        index_tracer1
     integer, dimension(:), pointer :: maxLevelCell
     real (kind=RKIND), pointer :: sphere_radius
     real (kind=RKIND), dimension(:), pointer :: refBottomDepth,&
@@ -132,33 +139,16 @@ module ocn_transport_tests
                kML
 
     real (kind=RKIND) :: vs
-    real (kind=RKIND), pointer :: temperature, salinity
 
     err = 0
 
-    call mpas_log_write("entered subroutine ocn_transport_test_init_setup", MPAS_LOG_OUT, .true.)
 
-    ! cannot call this routine unless 'config_init_configuration' = 'transport_tests'
-    call mpas_pool_get_config(domain%configs, 'config_init_configuration', config_init_configuration)
-    if (trim(config_init_configuration) /= trim('transport_tests')) then
-      err = 1
-      call mpas_log_write('invalid transport_tests config: '//config_init_configuration, MPAS_LOG_ERR)
-    else
-      ft%state = 2
-      ! set ft to positively id a transport test
-      call mpas_pool_get_config(domain%configs, 'config_transport_tests_flow_id', config_flow_id)
-      call mpas_log_write('after reading config_flow_id = ', MPAS_LOG_OUT, intArgs=[config_flow_id])
-      if (config_flow_id < 1 .or. config_flow_id > 4) then
-        err = 1
-        call mpas_log_write('invalid transport_tests flow id', MPAS_LOG_ERR, intArgs=[config_flow_id])
-      endif
-      ft%flow = config_flow_id
-      call mpas_log_write("transport_tests: setting up test case "//trim(flow_id_name(config_flow_id)), &
-        MPAS_LOG_OUT, .true.)
-    endif
+#ifdef MPAS_DEBUG
+    call mpas_log_write("entered subroutine ocn_transport_tests_init_setup", MPAS_LOG_OUT)
+    call mpas_log_write("config data : "//trim(config_init_configuration), MPAS_LOG_OUT, intArgs=[config_transport_tests_flow_id], realArgs=[config_transport_tests_temperature, config_transport_tests_salinity])
+#endif
 
-    call mpas_pool_get_config(domain%configs, 'config_transport_tests_salinity', salinity)
-    call mpas_pool_get_config(domain%configs, 'config_transport_tests_temperature', temperature)
+    call flow_init()
 
     block_ptr => domain % blocklist
     do while(associated(block_ptr))
@@ -211,13 +201,13 @@ module ocn_transport_tests
 
        do iCell = 1, nCellsSolve
           if (associated(activeTracers) ) then
-             activeTracers(index_temperature, :, iCell) = temperature !15.0d0
-             activeTracers(index_salinity, :, iCell) = salinity !35.0d0
+             activeTracers(index_temperature, :, iCell) = 15.0d0
+             activeTracers(index_salinity, :, iCell) = 35.0d0
           endif
 
           if (associated(debugTracers)) then
             if (ft%flow /= 4) then
-              vs = 1
+              vs = 1.0_RKIND
               do k = 1, nVertLevels
                  debugTracers(1, k, iCell) = vs*xyztrig(lonCell(iCell), latCell(iCell))
                  debugTracers(2, k, iCell) = vs*cosine_bells(lonCell(iCell), latCell(iCell))
@@ -257,6 +247,9 @@ module ocn_transport_tests
 
        block_ptr => block_ptr % next
     end do
+#ifdef MPAS_DEBUG
+    call mpas_log_write("exiting subroutine ocn_transport_test_init_setup", MPAS_LOG_OUT, .true.)
+#endif
   end subroutine ocn_transport_test_init_setup
 
 !***********************************************************************
@@ -279,7 +272,7 @@ subroutine ocn_transport_test_init_validate(cfgpl, pkgpl, iocontext, err)
 
   err = 0
 
-  call mpas_pool_get_config(cfgpl, 'config_vert_levels', config_vert_levels)
+!  call mpas_pool_get_config(cfgpl, 'config_vert_levels', config_vert_levels)
   config_vert_levels = 3
 end subroutine ocn_transport_test_init_validate
 
@@ -306,7 +299,7 @@ subroutine ocn_transport_test_velocity(meshPool, days_since_start, dt, normalVel
     integer, pointer :: nEdges
     integer :: i
 
-    !   call flow_init() // uncomment for debug/testing with flow_init()
+    call flow_run()
     if (ft%state /= 2) return
 
     time_sec = days_since_start*one_day + dt
@@ -337,25 +330,37 @@ subroutine ocn_transport_test_velocity(meshPool, days_since_start, dt, normalVel
 !
 !--------------------------------------------------------------------
 
-  ! For debug/testing: ignore config variables and manually set up test case
+
   subroutine flow_init()
-    character (len=255) :: key
-    integer :: err, val
+    if (trim(config_init_configuration) /= trim('transport_tests')) then
+      ! cannot call this routine unless 'config_init_configuration' = 'transport_tests'
+      call mpas_log_write('invalid transport_tests config: '//config_init_configuration, MPAS_LOG_ERR)
+    else
+      ! set ft to positively id a transport test --- required by time stepping routines
+      ft%state = 2
 
-    if (ft%state /= 0) return
-    ft%state = 1
+      if (config_transport_tests_flow_id < 1 .or. config_transport_tests_flow_id > 4) then
+        call mpas_log_write('invalid transport_tests flow id', MPAS_LOG_ERR, &
+          intArgs=[config_transport_tests_flow_id])
+      endif
 
-    call get_environment_variable("transport_tests", key, status=err)
-    if (err == 0) then
-      read(key, '(i)') val
-      if (val /= 0) ft%state = 2
+      ft%flow = config_transport_tests_flow_id
+      if ( trim(config_ocean_run_mode) == 'init') then
+      call mpas_log_write("transport_tests: setting up test case "//&
+        trim(flow_id_name(config_transport_tests_flow_id)), MPAS_LOG_OUT, .true.)
+      endif
     endif
-
-    !if (ft%state /= 2) return
-    val = 1
-    ft%state = 2
-    if (val >=1 .and. val <=3) ft%flow = val
   end subroutine flow_init
+
+
+  subroutine flow_run()
+    if ( trim(config_ocean_run_mode) == 'forward') then
+      if (trim(config_init_configuration) == trim('transport_tests')) then
+        ft%state = 2
+        ft%flow = config_transport_tests_flow_id
+      endif
+    endif
+  end subroutine
 
   pure function flow_id_name(fid) result(tcname)
     integer, intent(in) :: fid
