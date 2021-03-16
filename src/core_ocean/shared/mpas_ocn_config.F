@@ -25,6 +25,11 @@ module ocn_config
    public
    save
 
+#ifdef MPAS_DEBUG
+  logical, parameter :: flush_log = .true.
+#endif
+
+
 #include "../inc/config_declare.inc"
 
 !***********************************************************************
@@ -44,6 +49,10 @@ contains
        type (mpas_pool_type), pointer :: configPool
 
 #include "../inc/config_get.inc"
+
+#ifdef MPAS_DEBUG
+  call mpas_log_write("ocn_config_init: config variables loaded.", MPAS_LOG_OUT, flushNow=flush_log)
+#endif
 
    end subroutine ocn_config_init!}}}
 

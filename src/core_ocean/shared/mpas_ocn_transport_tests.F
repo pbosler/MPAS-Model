@@ -71,6 +71,10 @@ module ocn_transport_tests
 
   type(flow_type), save :: ft
 
+#ifdef MPAS_DEBUG
+  logical, parameter :: flush_log = .true.
+#endif
+
 !***********************************************************************
   contains
 
@@ -145,8 +149,8 @@ module ocn_transport_tests
 
 
 #ifdef MPAS_DEBUG
-    call mpas_log_write("entered subroutine ocn_transport_tests_init_setup", MPAS_LOG_OUT)
-    call mpas_log_write("config data : "//trim(config_init_configuration), MPAS_LOG_OUT, intArgs=[config_transport_tests_flow_id], realArgs=[config_transport_tests_temperature, config_transport_tests_salinity])
+    call mpas_log_write("entered subroutine ocn_transport_tests_init_setup", MPAS_LOG_OUT, flushNow=flush_log)
+    call mpas_log_write("config data : "//trim(config_init_configuration), MPAS_LOG_OUT, intArgs=[config_transport_tests_flow_id], realArgs=[config_transport_tests_temperature, config_transport_tests_salinity], flushNow=flush_log)
 #endif
 
     call flow_init()
@@ -249,7 +253,7 @@ module ocn_transport_tests
        block_ptr => block_ptr % next
     end do
 #ifdef MPAS_DEBUG
-    call mpas_log_write("exiting subroutine ocn_transport_test_init_setup", MPAS_LOG_OUT, .true.)
+    call mpas_log_write("exiting subroutine ocn_transport_test_init_setup", MPAS_LOG_OUT, .true. , flushNow=flush_log)
 #endif
   end subroutine ocn_transport_test_init_setup
 
@@ -330,7 +334,6 @@ subroutine ocn_transport_test_velocity(meshPool, days_since_start, dt, normalVel
 ! Private module functions
 !
 !--------------------------------------------------------------------
-
 
   subroutine flow_init()
     if (trim(config_init_configuration) /= trim('transport_tests')) then
